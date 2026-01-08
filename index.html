@@ -29,14 +29,27 @@
     }
 
     .header {
-      padding: 10px 20px;
+      padding: 15px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      flex-shrink: 0;
+      background: white;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .description {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 5px;
+    }
+
+    .header-controls {
       display: flex;
       gap: 15px;
       align-items: center;
       flex-wrap: wrap;
-      flex-shrink: 0;
-      background: white;
-      border-bottom: 1px solid #ddd;
     }
 
 
@@ -251,7 +264,10 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="controls">
+      <div class="description">
+        View your Google Calendar in a continuous year-grid layout. All-day events span across the days they cover, and weekends are visually aligned. Perfect for planning and seeing your entire year at a glance.
+      </div>
+      <div class="controls header-controls">
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <label for="ical-url-input" style="font-size: 14px;">Paste iCal feed URL:</label>
           <input type="text" id="ical-url-input" placeholder="https://calendar.google.com/calendar/ical/..." style="min-width: 300px; flex: 1;">
