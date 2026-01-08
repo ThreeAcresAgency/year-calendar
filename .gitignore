@@ -1,0 +1,15 @@
+# OAuth credentials (if stored in a config file)
+*.client_id
+*.client_secret
+config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
