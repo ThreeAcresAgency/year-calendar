@@ -746,9 +746,22 @@
         // Add click handler to open Google Calendar in new window
         eventBar.addEventListener('click', (e) => {
           e.stopPropagation();
-          // Simply open Google Calendar - direct event URLs from iCal don't work reliably
-          // User can search for the event by name/date in their calendar
-          window.open('https://calendar.google.com/calendar/u/0/r', '_blank', 'noopener,noreferrer');
+          
+          // If we have a direct URL from the iCal feed, use it
+          if (event.url && event.url.startsWith('http')) {
+            window.open(event.url, '_blank', 'noopener,noreferrer');
+            return;
+          }
+          
+          // Otherwise, construct a URL that navigates to the event's date
+          // Format: https://calendar.google.com/calendar/u/0/r/day/YEAR/MONTH/DAY
+          const year = startDate.getFullYear();
+          const month = startDate.getMonth() + 1; // Google Calendar uses 1-based months
+          const day = startDate.getDate();
+          
+          // Navigate to the specific date in Google Calendar
+          const calendarUrl = `https://calendar.google.com/calendar/u/0/r/day/${year}/${month}/${day}`;
+          window.open(calendarUrl, '_blank', 'noopener,noreferrer');
         });
         
         // Position absolutely to span across multiple days
