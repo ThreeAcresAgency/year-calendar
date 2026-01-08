@@ -36,90 +36,10 @@ A single-file HTML application that displays your Google Calendar in a continuou
 
 The URL will be saved in your browser, so you won't need to paste it again next time.
 
-## Alternative Setup (OAuth Method)
-
-If you prefer to use OAuth authentication instead of iCal feeds:
-
-### 1. Get Google OAuth Client ID
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select an existing one
-3. Enable the Google Calendar API:
-   - Navigate to "APIs & Services" > "Library"
-   - Search for "Google Calendar API"
-   - Click "Enable"
-4. Create OAuth 2.0 credentials:
-   - Go to "APIs & Services" > "Credentials"
-   - Click "Create Credentials" > "OAuth client ID"
-   - If prompted, configure the OAuth consent screen:
-     - Choose "External" (unless you have a Google Workspace)
-     - Fill in required fields (App name, User support email, Developer contact)
-     - Add your email as a test user
-   - For Application type, choose "Web application"
-   - Name it (e.g., "Year View Calendar")
-   - Under "Authorized JavaScript origins", add:
-     - `http://localhost`
-     - `http://127.0.0.1`
-     - `file://` (if opening HTML directly)
-   - Under "Authorized redirect URIs", add:
-     - `http://localhost`
-     - `http://127.0.0.1`
-   - Click "Create"
-5. Copy the **Client ID** (looks like: `xxxxx.apps.googleusercontent.com`)
-
-### 2. Configure the HTML File
-
-1. Open `index.html` in a text editor
-2. Find the line near the top of the `<script>` section:
-   ```javascript
-   const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
-   ```
-3. Replace `YOUR_CLIENT_ID_HERE.apps.googleusercontent.com` with your actual Client ID
-4. Save the file
-
-### 3. Use the Application
-
-**Option A: Open directly in browser**
-- Double-click `index.html` or open it in your browser
-- Note: Some browsers may block the Google Sign-In popup when opening from `file://` protocol
-- If this happens, use Option B
-
-**Option B: Use a local web server (Recommended)**
-
-Using Python 3:
-```bash
-# Navigate to the project directory
-cd /path/to/YearView
-
-# Start a simple HTTP server
-python3 -m http.server 8000
-```
-
-Then open `http://localhost:8000` in your browser.
-
-Using Node.js (if you have it):
-```bash
-# Install http-server globally (one time)
-npm install -g http-server
-
-# Start the server
-http-server -p 8000
-```
-
-Then open `http://localhost:8000` in your browser.
-
-### 4. Sign In and Use
-
-1. Click "Sign in with Google"
-2. Select your Google account (if you're already logged in, it will use that session)
-3. Grant calendar read permissions
-4. Select a calendar from the dropdown
-5. Optionally change the year using the year selector
-6. View your all-day events displayed across the year grid!
 
 ## How It Works
 
-- **iCal Feed Method** (Recommended): Simply fetches your calendar's iCal feed directly - no authentication needed!
+- Simply fetches your calendar's iCal feed directly - no authentication needed!
 - The calendar displays all 365/366 days of the year in a continuous grid
 - Weekends (Saturday and Sunday) are always aligned in the same columns, with a distinct gray gradient
 - Months flow continuously without visual breaks
@@ -155,10 +75,10 @@ Then open `http://localhost:8000` in your browser.
 
 ## Privacy
 
-- All authentication happens through Google's official OAuth flow
-- The access token is stored only in your browser's localStorage
-- No data is sent to any server except Google's API
-- All processing happens locally in your browser
+- No authentication required - uses public iCal feeds
+- All data processing happens locally in your browser
+- Your iCal URL is stored only in your browser's localStorage
+- No data is sent to any server except when fetching the iCal feed
 
 ## License
 

@@ -39,39 +39,6 @@
       border-bottom: 1px solid #ddd;
     }
 
-    .auth-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    #signin-button {
-      padding: 10px 20px;
-      background: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    #signin-button:hover {
-      background: #357ae8;
-    }
-
-    #signout-button {
-      padding: 10px 20px;
-      background: #dc3545;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    #signout-button:hover {
-      background: #c82333;
-    }
 
     .controls {
       display: flex;
@@ -284,11 +251,6 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="auth-section" style="display: none;">
-        <button id="signin-button" style="display: none;">Sign in with Google</button>
-        <button id="signout-button" style="display: none;">Sign out</button>
-        <span id="user-status" class="status"></span>
-      </div>
       <div class="controls">
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <label for="ical-url-input" style="font-size: 14px;">Paste iCal feed URL:</label>
@@ -302,9 +264,6 @@
           </label>
           <span id="cors-help" style="font-size: 11px; color: #999; cursor: help;" title="Enable this if you get CORS errors. Uses a public CORS proxy service.">ℹ️</span>
         </div>
-        <select id="calendar-select" disabled style="display: none;">
-          <option value="">Select a calendar...</option>
-        </select>
         <input type="number" id="year-select" value="2024" min="2000" max="2100">
         <span id="loading-status" class="status"></span>
       </div>
@@ -316,171 +275,8 @@
   </div>
 
   <script>
-    // Optional OAuth configuration (only needed if using Google API method instead of iCal)
-    // Uncomment and set if you want to use OAuth authentication:
-    // window.CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
-    
-    let accessToken = null;
     let currentYear = new Date().getFullYear();
-    let selectedCalendarId = null;
     let events = [];
-
-    let tokenClient;
-
-    function initializeGoogleAuth() {
-      // Only initialize if Google Identity Services is loaded and CLIENT_ID is configured
-      if (typeof google === 'undefined' || typeof google.accounts === 'undefined') {
-        return; // OAuth not available
-      }
-      
-      const CLIENT_ID = window.CLIENT_ID;
-      if (!CLIENT_ID || CLIENT_ID === 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com') {
-        // OAuth not configured - that's fine, user can use iCal feed
-        return;
-      }
-
-      // Initialize token client for OAuth 2.0
-      tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: 'https://www.googleapis.com/auth/calendar.readonly',
-        callback: (tokenResponse) => {
-          if (tokenResponse.error) {
-            console.error('Token error:', tokenResponse.error);
-            document.getElementById('user-status').textContent = 'Authentication failed';
-            document.getElementById('user-status').className = 'status error';
-            return;
-          }
-          
-          if (tokenResponse.access_token) {
-            accessToken = tokenResponse.access_token;
-            localStorage.setItem('google_access_token', accessToken);
-            document.getElementById('signin-button').style.display = 'none';
-            document.getElementById('signout-button').style.display = 'block';
-            document.getElementById('user-status').textContent = 'Signed in';
-            document.getElementById('user-status').className = 'status success';
-            loadCalendars();
-          }
-        }
-      });
-
-      document.getElementById('signin-button').style.display = 'block';
-      
-      // Check if user is already signed in (check localStorage)
-      const storedToken = localStorage.getItem('google_access_token');
-      if (storedToken) {
-        // Verify token is still valid by trying to use it
-        accessToken = storedToken;
-        document.getElementById('signin-button').style.display = 'none';
-        document.getElementById('signout-button').style.display = 'block';
-        document.getElementById('user-status').textContent = 'Checking session...';
-        loadCalendars();
-      }
-
-      // Setup sign in button
-      document.getElementById('signin-button').addEventListener('click', () => {
-        tokenClient.requestAccessToken({ prompt: '' });
-      });
-    }
-
-    function handleCredentialResponse(response) {
-      // This is for ID tokens, but we're using OAuth tokens instead
-      // Kept for compatibility but not used
-    }
-
-    document.getElementById('signout-button').addEventListener('click', () => {
-      if (accessToken) {
-        google.accounts.oauth2.revoke(accessToken);
-      }
-      accessToken = null;
-      localStorage.removeItem('google_access_token');
-      document.getElementById('signin-button').style.display = 'block';
-      document.getElementById('signout-button').style.display = 'none';
-      document.getElementById('user-status').textContent = '';
-      document.getElementById('user-status').className = 'status';
-      document.getElementById('calendar-select').innerHTML = '<option value="">Select a calendar...</option>';
-      document.getElementById('calendar-select').disabled = true;
-      document.getElementById('year-select').disabled = true;
-      document.getElementById('calendar-grid').innerHTML = '';
-      events = [];
-    });
-
-    async function loadCalendars() {
-      if (!accessToken) return;
-
-      try {
-        document.getElementById('loading-status').textContent = 'Loading calendars...';
-        const response = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            // Token expired, need to re-authenticate
-            accessToken = null;
-            localStorage.removeItem('google_access_token');
-            document.getElementById('signin-button').style.display = 'block';
-            document.getElementById('signout-button').style.display = 'none';
-            document.getElementById('user-status').textContent = 'Session expired. Please sign in again.';
-            document.getElementById('user-status').className = 'status error';
-            throw new Error('Session expired');
-          }
-          throw new Error('Failed to load calendars');
-        }
-
-        const data = await response.json();
-        const select = document.getElementById('calendar-select');
-        select.innerHTML = '<option value="">Select a calendar...</option>';
-        
-        data.items.forEach(cal => {
-          const option = document.createElement('option');
-          option.value = cal.id;
-          option.textContent = cal.summary;
-          select.appendChild(option);
-        });
-
-        select.disabled = false;
-        document.getElementById('year-select').disabled = false;
-        document.getElementById('loading-status').textContent = '';
-
-        // Load previously selected calendar if any
-        const savedCalendarId = localStorage.getItem('selected_calendar_id');
-        if (savedCalendarId) {
-          select.value = savedCalendarId;
-          selectedCalendarId = savedCalendarId;
-          loadEvents();
-        }
-      } catch (error) {
-        console.error('Error loading calendars:', error);
-        document.getElementById('loading-status').textContent = 'Error loading calendars';
-        document.getElementById('loading-status').className = 'status error';
-      }
-    }
-
-    document.getElementById('calendar-select').addEventListener('change', (e) => {
-      selectedCalendarId = e.target.value;
-      localStorage.setItem('selected_calendar_id', selectedCalendarId);
-      if (selectedCalendarId) {
-        loadEvents();
-      } else {
-        events = [];
-        renderCalendar();
-      }
-    });
-
-    document.getElementById('year-select').addEventListener('change', (e) => {
-      currentYear = parseInt(e.target.value);
-      if (selectedCalendarId || document.getElementById('ical-url-input').value) {
-        if (document.getElementById('ical-url-input').value) {
-          loadIcalFeed();
-        } else {
-          loadEvents();
-        }
-      } else {
-        renderCalendar();
-      }
-    });
 
     document.getElementById('load-ical-button').addEventListener('click', () => {
       loadIcalFeed();
@@ -492,51 +288,6 @@
       }
     });
 
-    async function loadEvents() {
-      if (!accessToken || !selectedCalendarId) return;
-
-      try {
-        document.getElementById('loading-status').textContent = 'Loading events...';
-        const yearStart = new Date(currentYear, 0, 1);
-        const yearEnd = new Date(currentYear, 11, 31, 23, 59, 59);
-
-        const timeMin = yearStart.toISOString();
-        const timeMax = yearEnd.toISOString();
-
-        const response = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(selectedCalendarId)}/events?` +
-          `timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`
-            }
-          }
-        );
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            // Token expired, need to re-authenticate
-            accessToken = null;
-            localStorage.removeItem('google_access_token');
-            document.getElementById('signin-button').style.display = 'block';
-            document.getElementById('signout-button').style.display = 'none';
-            document.getElementById('user-status').textContent = 'Session expired. Please sign in again.';
-            document.getElementById('user-status').className = 'status error';
-            throw new Error('Session expired');
-          }
-          throw new Error('Failed to load events');
-        }
-
-        const data = await response.json();
-        events = data.items || [];
-        document.getElementById('loading-status').textContent = '';
-        renderCalendar();
-      } catch (error) {
-        console.error('Error loading events:', error);
-        document.getElementById('loading-status').textContent = 'Error loading events';
-        document.getElementById('loading-status').className = 'status error';
-      }
-    }
 
     function renderCalendar() {
       const grid = document.getElementById('calendar-grid');
@@ -1026,11 +777,6 @@
           document.getElementById('use-cors-proxy').checked = true;
         }
         loadIcalFeed();
-      } else {
-        // Try to initialize OAuth (optional)
-        if (typeof google !== 'undefined' && typeof google.accounts !== 'undefined') {
-          initializeGoogleAuth();
-        }
       }
       
       renderCalendar();
